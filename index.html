@@ -75,6 +75,18 @@
             background: rgba(255, 215, 0, 0.2);
         }
 
+        .team-rating {
+            font-size: 0.9rem;
+            color: #FFD700;
+            margin-top: 5px;
+        }
+
+        .team-tactic {
+            font-size: 0.8rem;
+            color: #DDD;
+            margin-top: 3px;
+        }
+
         .league-title {
             font-size: 1.2rem;
             margin-bottom: 10px;
@@ -101,6 +113,12 @@
             margin-bottom: 10px;
         }
 
+        .team-stats {
+            font-size: 0.9rem;
+            color: #FFD700;
+            margin-bottom: 5px;
+        }
+
         .vs {
             font-size: 2rem;
             font-weight: bold;
@@ -113,6 +131,29 @@
             font-weight: bold;
             color: #FFD700;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .tactical-advantage {
+            text-align: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .advantage {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .disadvantage {
+            color: #FF5722;
+            font-weight: bold;
+        }
+
+        .neutral {
+            color: #FFC107;
+            font-weight: bold;
         }
 
         .btn {
@@ -206,6 +247,14 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
+        .tactics-info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+
         @media (max-width: 768px) {
             .team-card {
                 min-width: 150px;
@@ -246,14 +295,18 @@
             <div class="match-area">
                 <div class="team-info">
                     <div class="team-name" id="team1-name">팀 1</div>
+                    <div class="team-stats" id="team1-stats">레이팅: 0 | 전술: -</div>
                     <div class="score" id="team1-score">0</div>
                 </div>
                 <div class="vs">VS</div>
                 <div class="team-info">
                     <div class="team-name" id="team2-name">팀 2</div>
+                    <div class="team-stats" id="team2-stats">레이팅: 0 | 전술: -</div>
                     <div class="score" id="team2-score">0</div>
                 </div>
             </div>
+
+            <div class="tactical-advantage" id="tactical-info"></div>
 
             <div class="progress-bar">
                 <div class="progress-fill" id="match-progress"></div>
@@ -269,12 +322,111 @@
         </div>
 
         <div class="game-section">
+            <h3>전술 상성표</h3>
+            <div class="tactics-info">
+                <p><strong>게겐프레싱</strong> > 두 줄 수비, 점유율 축구 | < 롱볼축구, 카테나치오</p>
+                <p><strong>티키타카</strong> > 점유율 축구, 라볼피아나 | < 롱볼축구, 침대 축구</p>
+                <p><strong>카테나치오</strong> > 두 줄 수비, 침대 축구 | < 점유율 축구, 토탈 풋볼</p>
+                <p>등등... (9가지 전술의 상성)</p>
+            </div>
+        </div>
+
+        <div class="game-section">
             <h3>시뮬레이션 결과</h3>
             <div class="console-output" id="console-output"></div>
         </div>
     </div>
 
     <script>
+        // 전술 상성 시스템
+        const tactics = {
+            "게겐프레싱": {
+                effective: ["두 줄 수비", "점유율 축구"],
+                ineffective: ["롱볼축구", "카테나치오"]
+            },
+            "두 줄 수비": {
+                effective: ["롱볼축구", "침대 축구"],
+                ineffective: ["게겐프레싱", "토탈 풋볼"]
+            },
+            "라볼피아나": {
+                effective: ["점유율 축구", "티키타카"],
+                ineffective: ["카테나치오", "롱볼축구"]
+            },
+            "롱볼축구": {
+                effective: ["침대 축구", "카테나치오"],
+                ineffective: ["게겐프레싱", "티키타카"]
+            },
+            "점유율 축구": {
+                effective: ["티키타카", "라볼피아나"],
+                ineffective: ["롱볼축구", "게겐프레싱"]
+            },
+            "침대 축구": {
+                effective: ["카테나치오", "두 줄 수비"],
+                ineffective: ["게겐프레싱", "토탈 풋볼"]
+            },
+            "카테나치오": {
+                effective: ["두 줄 수비", "침대 축구"],
+                ineffective: ["점유율 축구", "토탈 풋볼"]
+            },
+            "토탈 풋볼": {
+                effective: ["티키타카", "게겐프레싱"],
+                ineffective: ["두 줄 수비", "카테나치오"]
+            },
+            "티키타카": {
+                effective: ["점유율 축구", "라볼피아나"],
+                ineffective: ["롱볼축구", "침대 축구"]
+            }
+        };
+
+        // 팀별 전술 배정
+        const teamTactics = {
+            // 1부리그
+            "레알 마드리드": "점유율 축구",
+            "바르셀로나": "토탈 풋볼",
+            "맨체스터 시티": "티키타카",
+            "바이에른 뮌헨": "티키타카",
+            "파리 생제르맹": "점유율 축구",
+            "리버풀": "게겐프레싱",
+            "아스널": "두 줄 수비",
+            "AC 밀란": "게겐프레싱",
+            "인터 밀란": "토탈 풋볼",
+            "아틀레티코 마드리드": "카테나치오",
+            "첼시": "롱볼축구",
+            "도르트문트": "게겐프레싱",
+            "나폴리": "침대 축구",
+            "토트넘 홋스퍼": "게겐프레싱",
+            // 2부리그
+            "유벤투스": "카테나치오",
+            "라이프치히": "게겐프레싱",
+            "뉴캐슬 유나이티드": "라볼피아나",
+            "세비야": "점유율 축구",
+            "아약스": "토탈 풋볼",
+            "로마": "롱볼축구",
+            "레버쿠젠": "롱볼축구",
+            "페예노르트": "토탈 풋볼",
+            "리옹": "점유율 축구",
+            "벤피카": "침대 축구",
+            "PSV": "토탈 풋볼",
+            "스포르팅 CP": "점유율 축구",
+            "셀틱": "게겐프레싱",
+            "아스톤 빌라": "두 줄 수비",
+            // 3부리그
+            "FC 서울": "점유율 축구",
+            "전북 현대": "게겐프레싱",
+            "울산 현대": "두 줄 수비",
+            "포항 스틸러스": "롱볼축구",
+            "광주 FC": "침대 축구",
+            "마르세유": "게겐프레싱",
+            "브라질 연합": "티키타카",
+            "아르헨티나 연합": "라볼피아나",
+            "멕시코 연합": "롱볼축구",
+            "미국 연합": "두 줄 수비",
+            "알힐랄": "점유율 축구",
+            "알나스르": "카테나치오",
+            "알이티하드": "침대 축구",
+            "갈라타사라이": "게겐프레싱"
+        };
+
         // 팀 데이터
         const teams = {
             "1부": [
@@ -327,44 +479,742 @@
             ]
         };
 
-        // 선수 데이터 (샘플)
-        const samplePlayers = {
+        // 모든 팀 선수 데이터
+        const realPlayers = {
+            // 1부 리그
             "바르셀로나": [
                 { name: "마르크안드레 테어 슈테겐", position: "GK", rating: 85 },
+                { name: "이냐키 페냐", position: "GK", rating: 74 },
+                { name: "보이치에흐 슈체스니", position: "GK", rating: 83 },
                 { name: "파우 쿠바르시", position: "DF", rating: 78 },
                 { name: "알레한드로 발데", position: "DF", rating: 76 },
+                { name: "로날드 아라우호", position: "DF", rating: 82 },
+                { name: "이니고 마르티네스", position: "DF", rating: 82 },
+                { name: "안드레아스 크리스텐센", position: "DF", rating: 79 },
+                { name: "쥘 쿤데", position: "DF", rating: 80 },
+                { name: "에릭 가르시아", position: "DF", rating: 76 },
                 { name: "가비", position: "MF", rating: 82 },
                 { name: "페드리", position: "MF", rating: 86 },
+                { name: "페르민 로페스", position: "MF", rating: 76 },
+                { name: "마르크 카사도", position: "MF", rating: 75 },
+                { name: "다니 올모", position: "MF", rating: 83 },
+                { name: "프렝키 더용", position: "MF", rating: 84 },
                 { name: "로베르트 레반도프스키", position: "FW", rating: 89 },
                 { name: "라민 야말", position: "FW", rating: 83 },
-                { name: "하피냐", position: "FW", rating: 85 }
+                { name: "하피냐", position: "FW", rating: 85 },
+                { name: "페란 토레스", position: "FW", rating: 81 }
             ],
             "레알 마드리드": [
                 { name: "티보 쿠르투아", position: "GK", rating: 87 },
+                { name: "안드리 루닌", position: "GK", rating: 80 },
                 { name: "다니 카르바할", position: "DF", rating: 82 },
                 { name: "에데르 밀리탕", position: "DF", rating: 84 },
+                { name: "데이비드 알라바", position: "DF", rating: 85 },
+                { name: "트렌트 알렉산더아놀드", position: "DF", rating: 87 },
+                { name: "안토니오 뤼디거", position: "DF", rating: 83 },
+                { name: "페를랑 멘디", position: "DF", rating: 78 },
                 { name: "주드 벨링엄", position: "MF", rating: 88 },
-                { name: "비니시우스 주니오르", position: "FW", rating: 87 },
+                { name: "에두아르도 카마빙가", position: "MF", rating: 83 },
+                { name: "페데리코 발베르데", position: "MF", rating: 85 },
+                { name: "오렐리앵 추아메니", position: "MF", rating: 84 },
+                { name: "아르다 귈러", position: "MF", rating: 78 },
                 { name: "킬리안 음바페", position: "FW", rating: 92 },
-                { name: "호드리구", position: "FW", rating: 85 }
+                { name: "비니시우스 주니오르", position: "FW", rating: 87 },
+                { name: "호드리구", position: "FW", rating: 85 },
+                { name: "엔드릭", position: "FW", rating: 79 },
+                { name: "브라힘 디아스", position: "FW", rating: 80 }
+            ],
+            "맨체스터 시티": [
+                { name: "에데르송", position: "GK", rating: 85 },
+                { name: "스테판 오르테가", position: "GK", rating: 80 },
+                { name: "후벵 디아스", position: "DF", rating: 88 },
+                { name: "존 스톤스", position: "DF", rating: 85 },
+                { name: "네이선 아케", position: "DF", rating: 82 },
+                { name: "요슈코 그바르디올", position: "DF", rating: 83 },
+                { name: "마누엘 아칸지", position: "DF", rating: 82 },
+                { name: "로드리", position: "MF", rating: 89 },
+                { name: "일카이 귄도간", position: "MF", rating: 86 },
+                { name: "베르나르두 실바", position: "MF", rating: 87 },
+                { name: "마테오 코바치치", position: "MF", rating: 84 },
+                { name: "필 포든", position: "MF", rating: 86 },
+                { name: "엘링 홀란드", position: "FW", rating: 91 },
+                { name: "잭 그릴리쉬", position: "FW", rating: 84 },
+                { name: "제레미 도쿠", position: "FW", rating: 81 },
+                { name: "오마르 마르무시", position: "FW", rating: 82 }
+            ],
+            "바이에른 뮌헨": [
+                { name: "마누엘 노이어", position: "GK", rating: 87 },
+                { name: "스벤 울라이히", position: "GK", rating: 78 },
+                { name: "다요 우파메카노", position: "DF", rating: 84 },
+                { name: "김민재", position: "DF", rating: 83 },
+                { name: "요나단 타", position: "DF", rating: 81 },
+                { name: "알폰소 데이비스", position: "DF", rating: 84 },
+                { name: "라파엘 게헤이루", position: "DF", rating: 79 },
+                { name: "요슈아 키미히", position: "MF", rating: 87 },
+                { name: "레온 고레츠카", position: "MF", rating: 84 },
+                { name: "주앙 팔리냐", position: "MF", rating: 82 },
+                { name: "자말 무시알라", position: "MF", rating: 87 },
+                { name: "해리 케인", position: "FW", rating: 89 },
+                { name: "세르주 그나브리", position: "FW", rating: 84 },
+                { name: "킹슬리 코망", position: "FW", rating: 85 },
+                { name: "마이클 올리세", position: "FW", rating: 82 }
+            ],
+            "파리 생제르맹": [
+                { name: "잔루이지 돈나룸마", position: "GK", rating: 86 },
+                { name: "마트베이 사포노프", position: "GK", rating: 78 },
+                { name: "아르나우 테나스", position: "GK", rating: 76 },
+                { name: "아슈라프 하키미", position: "DF", rating: 86 },
+                { name: "마르퀴뇨스", position: "DF", rating: 85 },
+                { name: "프레스넬 킴펨베", position: "DF", rating: 83 },
+                { name: "루카스 베랄두", position: "DF", rating: 75 },
+                { name: "누누 멘데스", position: "DF", rating: 79 },
+                { name: "뤼카 에르난데스", position: "DF", rating: 81 },
+                { name: "파비안 루이스", position: "MF", rating: 83 },
+                { name: "비티냐", position: "MF", rating: 79 },
+                { name: "이강인", position: "MF", rating: 80 },
+                { name: "주앙 네베스", position: "MF", rating: 78 },
+                { name: "우스만 뎀벨레", position: "FW", rating: 85 },
+                { name: "곤살루 하무스", position: "FW", rating: 82 },
+                { name: "흐비차 크바라츠헬리아", position: "FW", rating: 84 },
+                { name: "브래들리 바르콜라", position: "FW", rating: 79 }
+            ],
+            "리버풀": [
+                { name: "알리송 베케르", position: "GK", rating: 87 },
+                { name: "기오르기 마마르다슈빌리", position: "GK", rating: 78 },
+                { name: "버질 반 다이크", position: "DF", rating: 88 },
+                { name: "이브라히마 코나테", position: "DF", rating: 84 },
+                { name: "앤디 로버트슨", position: "DF", rating: 83 },
+                { name: "제레미 프림퐁", position: "DF", rating: 82 },
+                { name: "조 고메즈", position: "DF", rating: 81 },
+                { name: "알렉시스 맥 알리스터", position: "MF", rating: 85 },
+                { name: "도미니크 소보슬라이", position: "MF", rating: 84 },
+                { name: "라이언 흐라벤베르흐", position: "MF", rating: 82 },
+                { name: "엔도 와타루", position: "MF", rating: 78 },
+                { name: "모하메드 살라", position: "FW", rating: 87 },
+                { name: "다르윈 누녜스", position: "FW", rating: 84 },
+                { name: "코디 각포", position: "FW", rating: 82 },
+                { name: "플로리안 비르츠", position: "FW", rating: 85 },
+                { name: "페데리코 키에사", position: "FW", rating: 83 }
+            ],
+            "아스널": [
+                { name: "다비드 라야", position: "GK", rating: 84 },
+                { name: "케파 아리사발라가", position: "GK", rating: 80 },
+                { name: "윌리엄 살리바", position: "DF", rating: 85 },
+                { name: "가브리에우 마갈량이스", position: "DF", rating: 84 },
+                { name: "벤 화이트", position: "DF", rating: 83 },
+                { name: "위리엔 팀버르", position: "DF", rating: 82 },
+                { name: "리카르도 칼라피오리", position: "DF", rating: 81 },
+                { name: "마르틴 외데고르", position: "MF", rating: 86 },
+                { name: "데클란 라이스", position: "MF", rating: 85 },
+                { name: "카이 하베르츠", position: "MF", rating: 84 },
+                { name: "미켈 메리노", position: "MF", rating: 83 },
+                { name: "부카요 사카", position: "FW", rating: 87 },
+                { name: "가브리에우 마르티넬리", position: "FW", rating: 84 },
+                { name: "가브리에우 제주스", position: "FW", rating: 82 },
+                { name: "빅토르 요케레스", position: "FW", rating: 83 },
+                { name: "레안드로 트로사르", position: "FW", rating: 81 }
+            ],
+            "AC 밀란": [
+                { name: "마이크 메냥", position: "GK", rating: 82 },
+                { name: "피에트로 테라치아노", position: "GK", rating: 75 },
+                { name: "피카요 토모리", position: "DF", rating: 83 },
+                { name: "말릭 티아우", position: "DF", rating: 81 },
+                { name: "스트라히냐 파블로비치", position: "DF", rating: 80 },
+                { name: "에메르송 로얄", position: "DF", rating: 78 },
+                { name: "마테오 가비아", position: "DF", rating: 79 },
+                { name: "루카 모드리치", position: "MF", rating: 85 },
+                { name: "루벤 로프터스치크", position: "MF", rating: 83 },
+                { name: "유수프 포파나", position: "MF", rating: 82 },
+                { name: "워렌 본도", position: "MF", rating: 79 },
+                { name: "산티아고 히메네스", position: "FW", rating: 82 },
+                { name: "하파엘 레앙", position: "FW", rating: 84 },
+                { name: "크리스천 풀리식", position: "FW", rating: 83 },
+                { name: "사무엘레 리치", position: "FW", rating: 80 },
+                { name: "사무엘 추쿠에제", position: "FW", rating: 82 }
+            ],
+            "인터 밀란": [
+                { name: "얀 조머", position: "GK", rating: 84 },
+                { name: "라파엘레 디젠나로", position: "GK", rating: 77 },
+                { name: "주젭 마르티네스", position: "GK", rating: 79 },
+                { name: "알레산드로 바스토니", position: "DF", rating: 85 },
+                { name: "스테판 더프레이", position: "DF", rating: 81 },
+                { name: "뱅자맹 파바르", position: "DF", rating: 82 },
+                { name: "덴젤 둠프리스", position: "DF", rating: 80 },
+                { name: "페데리코 디마르코", position: "DF", rating: 83 },
+                { name: "니콜로 바렐라", position: "MF", rating: 84 },
+                { name: "헨리크 미키타리안", position: "MF", rating: 82 },
+                { name: "하칸 찰하놀루", position: "MF", rating: 84 },
+                { name: "피오트르 지엘린스키", position: "MF", rating: 83 },
+                { name: "라우타로 마르티네스", position: "FW", rating: 87 },
+                { name: "마르쿠스 튀랑", position: "FW", rating: 84 },
+                { name: "메흐디 타레미", position: "FW", rating: 81 },
+                { name: "루이스 엔히키", position: "FW", rating: 79 }
+            ],
+            "아틀레티코 마드리드": [
+                { name: "얀 오블락", position: "GK", rating: 87 },
+                { name: "후안 무소", position: "GK", rating: 79 },
+                { name: "호세 히메네스", position: "DF", rating: 82 },
+                { name: "마테오 루제리", position: "DF", rating: 79 },
+                { name: "클레망 랑글레", position: "DF", rating: 80 },
+                { name: "나우엘 몰리나", position: "DF", rating: 81 },
+                { name: "하비 갈란", position: "DF", rating: 78 },
+                { name: "코케", position: "MF", rating: 83 },
+                { name: "코너 갤러거", position: "MF", rating: 82 },
+                { name: "파블로 바리오스", position: "MF", rating: 80 },
+                { name: "마르코스 요렌테", position: "MF", rating: 81 },
+                { name: "앙투안 그리즈만", position: "FW", rating: 85 },
+                { name: "알렉산데르 쇠를로트", position: "FW", rating: 83 },
+                { name: "훌리안 알바레스", position: "FW", rating: 84 },
+                { name: "티아고 알마다", position: "FW", rating: 80 }
+            ],
+            "첼시": [
+                { name: "로베르트 산체스", position: "GK", rating: 81 },
+                { name: "필립 요르겐센", position: "GK", rating: 77 },
+                { name: "가브리엘 슬로니나", position: "GK", rating: 73 },
+                { name: "웨슬리 포파나", position: "DF", rating: 82 },
+                { name: "리바이 콜윌", position: "DF", rating: 80 },
+                { name: "트레보 찰로바", position: "DF", rating: 81 },
+                { name: "토신 아다라비오요", position: "DF", rating: 79 },
+                { name: "리스 제임스", position: "DF", rating: 83 },
+                { name: "엔소 페르난데스", position: "MF", rating: 84 },
+                { name: "모이세스 카이세도", position: "MF", rating: 83 },
+                { name: "콜 파머", position: "MF", rating: 85 },
+                { name: "키어넌 듀스버리홀", position: "MF", rating: 78 },
+                { name: "니콜라 잭슨", position: "FW", rating: 82 },
+                { name: "페드루 네투", position: "FW", rating: 83 },
+                { name: "주앙 페드루", position: "FW", rating: 80 },
+                { name: "크리스토퍼 은쿤쿠", position: "FW", rating: 81 }
+            ],
+            "도르트문트": [
+                { name: "그레고어 코벨", position: "GK", rating: 83 },
+                { name: "알렉산더 마이어", position: "GK", rating: 78 },
+                { name: "니코 슐로터베크", position: "DF", rating: 82 },
+                { name: "발데마르 안톤", position: "DF", rating: 81 },
+                { name: "얀 코투", position: "DF", rating: 79 },
+                { name: "율리안 뤼에르손", position: "DF", rating: 80 },
+                { name: "라미 벤세바이니", position: "DF", rating: 78 },
+                { name: "펠릭스 은메차", position: "MF", rating: 82 },
+                { name: "율리안 브란트", position: "MF", rating: 84 },
+                { name: "파스칼 그로스", position: "MF", rating: 83 },
+                { name: "마르셀 자비처", position: "MF", rating: 81 },
+                { name: "세루 기라시", position: "FW", rating: 83 },
+                { name: "막시밀리안 바이어", position: "FW", rating: 81 },
+                { name: "카림 아데예미", position: "FW", rating: 82 },
+                { name: "쥘리앵 뒤랑빌", position: "FW", rating: 78 }
+            ],
+            "나폴리": [
+                { name: "알렉스 메렛", position: "GK", rating: 82 },
+                { name: "니키타 콘티니", position: "GK", rating: 77 },
+                { name: "알레산드로 부온조르노", position: "DF", rating: 84 },
+                { name: "아미르 라흐마니", position: "DF", rating: 81 },
+                { name: "조반니 디 로렌초", position: "DF", rating: 80 },
+                { name: "마티아스 올리베라", position: "DF", rating: 79 },
+                { name: "레오나르도 스피나촐라", position: "DF", rating: 78 },
+                { name: "스콧 맥토미니", position: "MF", rating: 82 },
+                { name: "빌리 길모어", position: "MF", rating: 80 },
+                { name: "스타니슬라프 로보트카", position: "MF", rating: 79 },
+                { name: "라파 마린", position: "MF", rating: 77 },
+                { name: "로멜루 루카쿠", position: "FW", rating: 84 },
+                { name: "다비드 네리스", position: "FW", rating: 82 },
+                { name: "노아 오카포르", position: "FW", rating: 81 },
+                { name: "마테오 폴리타노", position: "FW", rating: 80 },
+                { name: "자코모 라스파도리", position: "FW", rating: 79 }
+            ],
+            "토트넘 홋스퍼": [
+                { name: "굴리엘모 비카리오", position: "GK", rating: 82 },
+                { name: "안토닌 킨스키", position: "GK", rating: 76 },
+                { name: "크리스티안 로메로", position: "DF", rating: 84 },
+                { name: "미키 판더벤", position: "DF", rating: 81 },
+                { name: "데스티니 우도기", position: "DF", rating: 80 },
+                { name: "페드로 포로", position: "DF", rating: 79 },
+                { name: "벤 데이비스", position: "DF", rating: 78 },
+                { name: "이브 비수마", position: "MF", rating: 84 },
+                { name: "제임스 매디슨", position: "MF", rating: 83 },
+                { name: "데얀 쿨루셉스키", position: "MF", rating: 84 },
+                { name: "파페 마타르 사르", position: "MF", rating: 81 },
+                { name: "손흥민", position: "FW", rating: 86 },
+                { name: "도미닉 솔랑케", position: "FW", rating: 82 },
+                { name: "히샬리송", position: "FW", rating: 81 },
+                { name: "브레넌 존슨", position: "FW", rating: 80 },
+                { name: "양민혁", position: "FW", rating: 76 }
+            ],
+
+            // 2부 리그
+            "유벤투스": [
+                { name: "미켈레 디그레고리오", position: "GK", rating: 82 },
+                { name: "마티아 페린", position: "GK", rating: 79 },
+                { name: "글레이송 브레메르", position: "DF", rating: 84 },
+                { name: "페데리코 가티", position: "DF", rating: 81 },
+                { name: "피에르 칼룰루", position: "DF", rating: 80 },
+                { name: "안드레아 캄비아소", position: "DF", rating: 79 },
+                { name: "니콜로 사보나", position: "DF", rating: 77 },
+                { name: "마누엘 로카텔리", position: "MF", rating: 82 },
+                { name: "퇸 코프메이너르스", position: "MF", rating: 83 },
+                { name: "웨스턴 맥케니", position: "MF", rating: 80 },
+                { name: "케프랑 튀랑", position: "MF", rating: 78 },
+                { name: "두샨 블라호비치", position: "FW", rating: 84 },
+                { name: "프란시스쿠 콘세이상", position: "FW", rating: 81 },
+                { name: "케난 일디즈", position: "FW", rating: 79 },
+                { name: "티모시 웨아", position: "FW", rating: 78 }
+            ],
+            "라이프치히": [
+                { name: "페테르 굴라치", position: "GK", rating: 81 },
+                { name: "마르턴 판더보르트", position: "GK", rating: 77 },
+                { name: "빌리 오르반", position: "DF", rating: 82 },
+                { name: "루카스 클로스터만", position: "DF", rating: 80 },
+                { name: "다비트 라움", position: "DF", rating: 81 },
+                { name: "엘 샤데유 비치아부", position: "DF", rating: 78 },
+                { name: "베냐민 헨릭스", position: "DF", rating: 79 },
+                { name: "아마두 아이다라", position: "MF", rating: 82 },
+                { name: "니콜라스 자이발트", position: "MF", rating: 81 },
+                { name: "크리스토프 바움가르트너", position: "MF", rating: 80 },
+                { name: "크사버 슐라거", position: "MF", rating: 79 },
+                { name: "유수프 포울센", position: "FW", rating: 81 },
+                { name: "로이스 오펜다", position: "FW", rating: 83 },
+                { name: "베냐민 셰슈코", position: "FW", rating: 80 },
+                { name: "안토니오 누사", position: "FW", rating: 78 }
+            ],
+            "뉴캐슬 유나이티드": [
+                { name: "닉 포프", position: "GK", rating: 81 },
+                { name: "마르틴 두브라프카", position: "GK", rating: 80 },
+                { name: "스벤 보트만", position: "DF", rating: 82 },
+                { name: "파비안 셰어", position: "DF", rating: 80 },
+                { name: "키어런 트리피어", position: "DF", rating: 81 },
+                { name: "댄 번", position: "DF", rating: 78 },
+                { name: "티노 리브라멘토", position: "DF", rating: 79 },
+                { name: "브루누 기마랑이스", position: "MF", rating: 82 },
+                { name: "산드로 토날리", position: "MF", rating: 83 },
+                { name: "조엘린통", position: "MF", rating: 81 },
+                { name: "조 윌록", position: "MF", rating: 80 },
+                { name: "알렉산데르 이사크", position: "FW", rating: 84 },
+                { name: "칼럼 윌슨", position: "FW", rating: 81 },
+                { name: "앤서니 고든", position: "FW", rating: 82 },
+                { name: "하비 반스", position: "FW", rating: 80 }
+            ],
+            "세비야": [
+                { name: "외르얀 뉠란", position: "GK", rating: 80 },
+                { name: "알바로 페르난데스", position: "GK", rating: 79 },
+                { name: "로익 바데", position: "DF", rating: 81 },
+                { name: "마르캉", position: "DF", rating: 80 },
+                { name: "키케 살라스", position: "DF", rating: 78 },
+                { name: "아드리아 페드로사", position: "DF", rating: 79 },
+                { name: "호세 앙헬 카르모나", position: "DF", rating: 77 },
+                { name: "네마냐 구데이", position: "MF", rating: 81 },
+                { name: "뤼시앵 아구메", position: "MF", rating: 80 },
+                { name: "지브릴 소우", position: "MF", rating: 79 },
+                { name: "김민수", position: "MF", rating: 75 },
+                { name: "이삭 로메로", position: "FW", rating: 82 },
+                { name: "도디 루케바키오", position: "FW", rating: 81 },
+                { name: "루벤 바르가스", position: "FW", rating: 80 },
+                { name: "페케", position: "FW", rating: 78 }
+            ],
+            "아약스": [
+                { name: "렘코 파스베이르", position: "GK", rating: 79 },
+                { name: "비테슬라프 야로스", position: "GK", rating: 78 },
+                { name: "요시프 슈탈로", position: "DF", rating: 81 },
+                { name: "조렐 하토", position: "DF", rating: 78 },
+                { name: "안톤 고에이", position: "DF", rating: 79 },
+                { name: "오언 베인달", position: "DF", rating: 80 },
+                { name: "유리 바스", position: "DF", rating: 77 },
+                { name: "케네스 테일러", position: "MF", rating: 81 },
+                { name: "데이비 클라선", position: "MF", rating: 80 },
+                { name: "브랑코 판 덴 보먼", position: "MF", rating: 79 },
+                { name: "키안 피츠짐", position: "MF", rating: 76 },
+                { name: "브라이언 브로비", position: "FW", rating: 82 },
+                { name: "베르트랑 트라오레", position: "FW", rating: 81 },
+                { name: "스티븐 베르하위스", position: "FW", rating: 80 },
+                { name: "바웃 베호르스트", position: "FW", rating: 79 }
+            ],
+            "로마": [
+                { name: "밀레 스빌라르", position: "GK", rating: 80 },
+                { name: "피에를루이지 골리니", position: "GK", rating: 79 },
+                { name: "마츠 후멜스", position: "DF", rating: 83 },
+                { name: "잔루카 만치니", position: "DF", rating: 82 },
+                { name: "에방 은디카", position: "DF", rating: 81 },
+                { name: "안젤리뇨", position: "DF", rating: 80 },
+                { name: "제키 첼리크", position: "DF", rating: 79 },
+                { name: "레안드로 파레데스", position: "MF", rating: 82 },
+                { name: "로렌초 펠레그리니", position: "MF", rating: 81 },
+                { name: "브라얀 크리스탄테", position: "MF", rating: 80 },
+                { name: "마누 코네", position: "MF", rating: 79 },
+                { name: "파울로 디발라", position: "FW", rating: 84 },
+                { name: "아르템 도우비크", position: "FW", rating: 82 },
+                { name: "마티아스 소울레", position: "FW", rating: 81 },
+                { name: "스테판 엘샤라위", position: "FW", rating: 80 }
+            ],
+            "레버쿠젠": [
+                { name: "루카시 흐라데츠키", position: "GK", rating: 82 },
+                { name: "마체이 코바르시", position: "GK", rating: 79 },
+                { name: "요나단 타", position: "DF", rating: 81 },
+                { name: "에드몽 탑소바", position: "DF", rating: 82 },
+                { name: "알레한드로 그리말도", position: "DF", rating: 83 },
+                { name: "피에로 잉카피에", position: "DF", rating: 78 },
+                { name: "아르투르", position: "DF", rating: 77 },
+                { name: "그라니트 자카", position: "MF", rating: 84 },
+                { name: "로베르트 안드리히", position: "MF", rating: 83 },
+                { name: "알레시 가르시아", position: "MF", rating: 82 },
+                { name: "에세키엘 팔라시오스", position: "MF", rating: 81 },
+                { name: "파트리크 시크", position: "FW", rating: 83 },
+                { name: "빅터 보니페이스", position: "FW", rating: 82 },
+                { name: "마르탱 테리에", position: "FW", rating: 81 },
+                { name: "아민 아들리", position: "FW", rating: 80 }
+            ],
+            "페예노르트": [
+                { name: "티몬 벨렌로이터", position: "GK", rating: 81 },
+                { name: "저스틴 베일로", position: "GK", rating: 80 },
+                { name: "게르노트 트라우너", position: "DF", rating: 82 },
+                { name: "바르트 니우코프", position: "DF", rating: 81 },
+                { name: "토마스 베일런", position: "DF", rating: 80 },
+                { name: "황인범", position: "MF", rating: 82 },
+                { name: "퀸턴 팀버르", position: "MF", rating: 81 },
+                { name: "야쿠프 모데르", position: "MF", rating: 80 },
+                { name: "루카 이바누셰츠", position: "MF", rating: 79 },
+                { name: "우에다 아야세", position: "FW", rating: 82 },
+                { name: "칼빈 스텡스", position: "FW", rating: 81 },
+                { name: "이고르 파이샹", position: "FW", rating: 80 },
+                { name: "훌리안 카란사", position: "FW", rating: 79 }
+            ],
+            "리옹": [
+                { name: "루카스 페리", position: "GK", rating: 81 },
+                { name: "레미 데캉", position: "GK", rating: 78 },
+                { name: "니콜라스 탈리아피코", position: "DF", rating: 82 },
+                { name: "무사 니아카테", position: "DF", rating: 81 },
+                { name: "클린톤 마타", position: "DF", rating: 80 },
+                { name: "아브네르 비니시우스", position: "DF", rating: 79 },
+                { name: "네마냐 마티치", position: "MF", rating: 83 },
+                { name: "코랑탱 톨리소", position: "MF", rating: 82 },
+                { name: "태너 테스만", position: "MF", rating: 80 },
+                { name: "말릭 포파나", position: "MF", rating: 78 },
+                { name: "알렉상드르 라카제트", position: "FW", rating: 82 },
+                { name: "조르지 미카우타제", position: "FW", rating: 81 },
+                { name: "어니스트 누아마", position: "FW", rating: 80 },
+                { name: "라얀 셰르키", position: "FW", rating: 79 }
+            ],
+            "벤피카": [
+                { name: "아나톨리 트루빈", position: "GK", rating: 82 },
+                { name: "사무엘 소아르스", position: "GK", rating: 78 },
+                { name: "니콜라스 오타멘디", position: "DF", rating: 83 },
+                { name: "알렉산데르 바", position: "DF", rating: 82 },
+                { name: "토마스 아라우주", position: "DF", rating: 81 },
+                { name: "알바로 카레라스", position: "DF", rating: 80 },
+                { name: "플로렌티누 루이스", position: "MF", rating: 82 },
+                { name: "프레드리크 아우르스네스", position: "MF", rating: 81 },
+                { name: "오르쿤 쾨크취", position: "MF", rating: 80 },
+                { name: "레안드루 바헤이루", position: "MF", rating: 79 },
+                { name: "앙헬 디 마리아", position: "FW", rating: 84 },
+                { name: "반젤리스 파블리디스", position: "FW", rating: 83 },
+                { name: "아르투르 카브라우", position: "FW", rating: 82 },
+                { name: "케렘 아크튀르크올루", position: "FW", rating: 81 }
+            ],
+            "PSV": [
+                { name: "니크 올레이", position: "GK", rating: 81 },
+                { name: "요엘 드로멀", position: "GK", rating: 79 },
+                { name: "아르만도 오비스포", position: "DF", rating: 82 },
+                { name: "올리비에 보스칼리", position: "DF", rating: 81 },
+                { name: "라이언 플라밍고", position: "DF", rating: 80 },
+                { name: "세르지뇨 데스트", position: "DF", rating: 79 },
+                { name: "이스마엘 세이바리", position: "MF", rating: 82 },
+                { name: "예르디 스하우턴", position: "MF", rating: 81 },
+                { name: "휘스 틸", position: "MF", rating: 80 },
+                { name: "이반 페리시치", position: "MF", rating: 83 },
+                { name: "루번 판보멀", position: "FW", rating: 82 },
+                { name: "리카르도 페피", position: "FW", rating: 81 },
+                { name: "알라산 플레아", position: "FW", rating: 80 },
+                { name: "쿠하이브 드리우시", position: "FW", rating: 79 }
+            ],
+            "스포르팅 CP": [
+                { name: "프랑코 이스라엘", position: "GK", rating: 81 },
+                { name: "블라단 코바체비치", position: "GK", rating: 79 },
+                { name: "곤살루 이나시우", position: "DF", rating: 82 },
+                { name: "제리 신트쥐스터", position: "DF", rating: 81 },
+                { name: "마테우스 헤이스", position: "DF", rating: 80 },
+                { name: "제노 데바스트", position: "DF", rating: 79 },
+                { name: "모리타 히데마사", position: "MF", rating: 82 },
+                { name: "누누 산투스", position: "MF", rating: 81 },
+                { name: "모르텐 히울만", position: "MF", rating: 80 },
+                { name: "주앙 네베스", position: "MF", rating: 79 },
+                { name: "페드루 곤살베스", position: "FW", rating: 83 },
+                { name: "막시밀리아노 아라우호", position: "FW", rating: 82 },
+                { name: "프란시스쿠 트링캉", position: "FW", rating: 81 },
+                { name: "콘라드 하더", position: "FW", rating: 80 }
+            ],
+            "셀틱": [
+                { name: "카스페르 슈마이켈", position: "GK", rating: 82 },
+                { name: "로스 두핸", position: "GK", rating: 78 },
+                { name: "키어런 티어니", position: "DF", rating: 83 },
+                { name: "캐머런 카터비커스", position: "DF", rating: 82 },
+                { name: "리암 스케일스", position: "DF", rating: 81 },
+                { name: "오스턴 트러스티", position: "DF", rating: 80 },
+                { name: "칼럼 맥그리거", position: "MF", rating: 82 },
+                { name: "하타테 레오", position: "MF", rating: 81 },
+                { name: "아르네 엥얼스", position: "MF", rating: 80 },
+                { name: "루크 매코완", position: "MF", rating: 79 },
+                { name: "양현준", position: "FW", rating: 80 },
+                { name: "마에다 다이젠", position: "FW", rating: 81 },
+                { name: "야마다 신", position: "FW", rating: 82 },
+                { name: "아담 이다", position: "FW", rating: 79 }
+            ],
+            "아스톤 빌라": [
+                { name: "에밀리아노 마르티네스", position: "GK", rating: 84 },
+                { name: "로빈 올센", position: "GK", rating: 78 },
+                { name: "타이론 밍스", position: "DF", rating: 82 },
+                { name: "에즈리 콘사", position: "DF", rating: 81 },
+                { name: "파우 토레스", position: "DF", rating: 83 },
+                { name: "뤼카 디뉴", position: "DF", rating: 80 },
+                { name: "매티 캐시", position: "DF", rating: 79 },
+                { name: "유리 틸레만스", position: "MF", rating: 83 },
+                { name: "아마두 오나나", position: "MF", rating: 82 },
+                { name: "존 맥긴", position: "MF", rating: 81 },
+                { name: "부바카르 카마라", position: "MF", rating: 80 },
+                { name: "올리 왓킨스", position: "FW", rating: 84 },
+                { name: "모건 로저스", position: "FW", rating: 82 },
+                { name: "도니얼 말런", position: "FW", rating: 81 },
+                { name: "레온 베일리", position: "FW", rating: 80 }
+            ],
+
+            // 3부 리그
+            "FC 서울": [
+                { name: "최철원", position: "GK", rating: 75 },
+                { name: "강현무", position: "GK", rating: 74 },
+                { name: "이한도", position: "DF", rating: 76 },
+                { name: "김진수", position: "DF", rating: 75 },
+                { name: "이상민", position: "DF", rating: 74 },
+                { name: "야잔", position: "DF", rating: 73 },
+                { name: "최준", position: "DF", rating: 72 },
+                { name: "정승원", position: "MF", rating: 76 },
+                { name: "이승모", position: "MF", rating: 75 },
+                { name: "린가드", position: "MF", rating: 82 },
+                { name: "류재문", position: "MF", rating: 74 },
+                { name: "조영욱", position: "FW", rating: 76 },
+                { name: "천성훈", position: "FW", rating: 75 },
+                { name: "손승범", position: "FW", rating: 74 },
+                { name: "클리말라", position: "FW", rating: 73 }
+            ],
+            "전북 현대": [
+                { name: "송범근", position: "GK", rating: 76 },
+                { name: "김정훈", position: "GK", rating: 75 },
+                { name: "김태환", position: "DF", rating: 77 },
+                { name: "홍정호", position: "DF", rating: 76 },
+                { name: "김영빈", position: "DF", rating: 75 },
+                { name: "최철순", position: "DF", rating: 74 },
+                { name: "한국영", position: "MF", rating: 78 },
+                { name: "박진섭", position: "MF", rating: 77 },
+                { name: "이승우", position: "MF", rating: 76 },
+                { name: "감보아", position: "MF", rating: 75 },
+                { name: "티아고", position: "FW", rating: 78 },
+                { name: "송민규", position: "FW", rating: 76 },
+                { name: "츄마시", position: "FW", rating: 75 },
+                { name: "박재용", position: "FW", rating: 74 },
+                { name: "성진영", position: "FW", rating: 73 }
+            ],
+            "울산 현대": [
+                { name: "조현우", position: "GK", rating: 80 },
+                { name: "문정인", position: "GK", rating: 76 },
+                { name: "김영권", position: "DF", rating: 78 },
+                { name: "정승현", position: "DF", rating: 77 },
+                { name: "강상우", position: "DF", rating: 76 },
+                { name: "트로야크", position: "DF", rating: 75 },
+                { name: "정우영", position: "MF", rating: 79 },
+                { name: "고승범", position: "MF", rating: 78 },
+                { name: "이청용", position: "MF", rating: 77 },
+                { name: "보야니치", position: "MF", rating: 76 },
+                { name: "말컹", position: "FW", rating: 78 },
+                { name: "엄원상", position: "FW", rating: 77 },
+                { name: "허율", position: "FW", rating: 76 },
+                { name: "루빅손", position: "FW", rating: 75 }
+            ],
+            "포항 스틸러스": [
+                { name: "윤평국", position: "GK", rating: 76 },
+                { name: "황인재", position: "GK", rating: 75 },
+                { name: "신광훈", position: "DF", rating: 77 },
+                { name: "전민광", position: "DF", rating: 76 },
+                { name: "완델손", position: "DF", rating: 75 },
+                { name: "어정원", position: "DF", rating: 74 },
+                { name: "기성용", position: "MF", rating: 78 },
+                { name: "김종우", position: "MF", rating: 77 },
+                { name: "오베르단", position: "MF", rating: 76 },
+                { name: "홍지우", position: "MF", rating: 75 },
+                { name: "김인성", position: "FW", rating: 77 },
+                { name: "백성동", position: "FW", rating: 76 },
+                { name: "조르지", position: "FW", rating: 75 },
+                { name: "주닝요", position: "FW", rating: 74 }
+            ],
+            "광주 FC": [
+                { name: "김경민", position: "GK", rating: 75 },
+                { name: "노희동", position: "GK", rating: 73 },
+                { name: "민상기", position: "DF", rating: 76 },
+                { name: "안영규", position: "DF", rating: 75 },
+                { name: "이민기", position: "DF", rating: 74 },
+                { name: "변준수", position: "DF", rating: 73 },
+                { name: "주세종", position: "MF", rating: 77 },
+                { name: "김한길", position: "MF", rating: 76 },
+                { name: "이강현", position: "MF", rating: 75 },
+                { name: "최경록", position: "MF", rating: 74 },
+                { name: "아사니", position: "FW", rating: 76 },
+                { name: "하승운", position: "FW", rating: 75 },
+                { name: "가브리엘", position: "FW", rating: 74 },
+                { name: "헤이스", position: "FW", rating: 73 }
+            ],
+            "마르세유": [
+                { name: "헤로니모 룰리", position: "GK", rating: 80 },
+                { name: "제프리 더랭", position: "GK", rating: 78 },
+                { name: "레오나르도 발레르디", position: "DF", rating: 82 },
+                { name: "데릭 코넬리우스", position: "DF", rating: 81 },
+                { name: "쿠엔탕 메를랑", position: "DF", rating: 80 },
+                { name: "루이스 펠리피", position: "DF", rating: 79 },
+                { name: "아드리앙 라비오", position: "MF", rating: 83 },
+                { name: "피에르에밀 호이비에르", position: "MF", rating: 82 },
+                { name: "이스마엘 베나세르", position: "MF", rating: 81 },
+                { name: "발렌틴 론지에", position: "MF", rating: 80 },
+                { name: "메이슨 그린우드", position: "FW", rating: 84 },
+                { name: "닐 모페", position: "FW", rating: 83 },
+                { name: "아민 구이리", position: "FW", rating: 82 },
+                { name: "조너선 로우", position: "FW", rating: 81 }
+            ],
+            "브라질 연합": [
+                { name: "베베르통", position: "GK", rating: 78 },
+                { name: "카시우", position: "GK", rating: 76 },
+                { name: "구스타부 고메스", position: "DF", rating: 81 },
+                { name: "무리루 세르케이라", position: "DF", rating: 80 },
+                { name: "마르사우", position: "DF", rating: 79 },
+                { name: "페드루 엔히키", position: "DF", rating: 78 },
+                { name: "히오르히안 데 아라스카에타", position: "MF", rating: 82 },
+                { name: "하파에우 베이가", position: "MF", rating: 81 },
+                { name: "제르송", position: "MF", rating: 80 },
+                { name: "안드레", position: "MF", rating: 79 },
+                { name: "헐크", position: "FW", rating: 83 },
+                { name: "가브리에우 바르보사", position: "FW", rating: 82 },
+                { name: "페드루", position: "FW", rating: 81 },
+                { name: "치키뉴 소아레스", position: "FW", rating: 80 }
+            ],
+            "아르헨티나 연합": [
+                { name: "프랑코 아르마니", position: "GK", rating: 79 },
+                { name: "세르히오 로메로", position: "GK", rating: 78 },
+                { name: "마르코스 로호", position: "DF", rating: 82 },
+                { name: "니콜라스 발렌티니", position: "DF", rating: 81 },
+                { name: "엔소 디아스", position: "DF", rating: 80 },
+                { name: "루카스 블론델", position: "DF", rating: 79 },
+                { name: "엔소 페레스", position: "MF", rating: 83 },
+                { name: "아구스틴 팔라베시노", position: "MF", rating: 82 },
+                { name: "이그나시오 페르난데스", position: "MF", rating: 81 },
+                { name: "에세키엘 바르코", position: "MF", rating: 80 },
+                { name: "에딘손 카바니", position: "FW", rating: 84 },
+                { name: "다리오 베네데토", position: "FW", rating: 83 },
+                { name: "후안 페르난도 킨테로", position: "FW", rating: 82 },
+                { name: "미겔 보르하", position: "FW", rating: 81 }
+            ],
+            "멕시코 연합": [
+                { name: "루이스 말라곤", position: "GK", rating: 78 },
+                { name: "나우엘 구스만", position: "GK", rating: 77 },
+                { name: "세르히오 라모스", position: "DF", rating: 84 },
+                { name: "카를로스 살세도", position: "DF", rating: 81 },
+                { name: "이고르 리치노프스키", position: "DF", rating: 80 },
+                { name: "이스라엘 레예스", position: "DF", rating: 79 },
+                { name: "하메스 로드리게스", position: "MF", rating: 85 },
+                { name: "디에고 발데스", position: "MF", rating: 82 },
+                { name: "루이스 로모", position: "MF", rating: 81 },
+                { name: "페르난도 고리아란", position: "MF", rating: 80 },
+                { name: "앙드레 피에르 지냐크", position: "FW", rating: 83 },
+                { name: "헨리 마르틴", position: "FW", rating: 82 },
+                { name: "기예르모 마르티네스", position: "FW", rating: 81 },
+                { name: "훌리안 키뇨네스", position: "FW", rating: 80 }
+            ],
+            "미국 연합": [
+                { name: "마르텐 파에스", position: "GK", rating: 79 },
+                { name: "드레이크 캘린더", position: "GK", rating: 78 },
+                { name: "리오넬 메시", position: "FW", rating: 90 },
+                { name: "루이스 수아레스", position: "FW", rating: 83 },
+                { name: "워커 짐머만", position: "DF", rating: 80 },
+                { name: "마일스 로빈슨", position: "DF", rating: 79 },
+                { name: "니콜라스 프레이레", position: "DF", rating: 78 },
+                { name: "세르히오 부스케츠", position: "MF", rating: 84 },
+                { name: "로드리고 데 파울", position: "MF", rating: 83 },
+                { name: "루시아노 아코스타", position: "MF", rating: 82 },
+                { name: "카를레스 길", position: "MF", rating: 81 },
+                { name: "쿠초 에르난데스", position: "FW", rating: 82 },
+                { name: "크리스티안 벤테케", position: "FW", rating: 81 },
+                { name: "로렌초 인시녜", position: "FW", rating: 80 }
+            ],
+            "알힐랄": [
+                { name: "야신 부누", position: "GK", rating: 82 },
+                { name: "모하메드 알 오와이스", position: "GK", rating: 80 },
+                { name: "칼리두 쿨리발리", position: "DF", rating: 84 },
+                { name: "테오 에르난데스", position: "DF", rating: 85 },
+                { name: "주앙 칸셀루", position: "DF", rating: 83 },
+                { name: "알리 알 불라이히", position: "DF", rating: 81 },
+                { name: "후벵 네베스", position: "MF", rating: 86 },
+                { name: "세르게이 밀린코비치-사비치", position: "MF", rating: 85 },
+                { name: "모하메드 칸노", position: "MF", rating: 82 },
+                { name: "살렘 알 다우사리", position: "MF", rating: 81 },
+                { name: "알렉산다르 미트로비치", position: "FW", rating: 84 },
+                { name: "마우콩", position: "FW", rating: 83 },
+                { name: "마르코스 레오나르두", position: "FW", rating: 82 },
+                { name: "압데라락 함달라", position: "FW", rating: 81 }
+            ],
+            "알나스르": [
+                { name: "다비드 오스피나", position: "GK", rating: 81 },
+                { name: "나와프 알 아키디", position: "GK", rating: 78 },
+                { name: "크리스티아누 호날두", position: "FW", rating: 88 },
+                { name: "아이메릭 라포르테", position: "DF", rating: 84 },
+                { name: "알렉스 텔레스", position: "DF", rating: 83 },
+                { name: "술탄 알 간남", position: "DF", rating: 82 },
+                { name: "마르셀루 브로조비치", position: "MF", rating: 85 },
+                { name: "오타비우", position: "MF", rating: 84 },
+                { name: "압둘마지드 알 술라이힘", position: "MF", rating: 83 },
+                { name: "사미 알 나지", position: "MF", rating: 82 },
+                { name: "사디오 마네", position: "FW", rating: 85 },
+                { name: "안데르송 탈리스카", position: "FW", rating: 84 },
+                { name: "유세프 엔네시리", position: "FW", rating: 83 },
+                { name: "압둘라흐만 가리브", position: "FW", rating: 82 }
+            ],
+            "알이티하드": [
+                { name: "마르셀루 그로헤", position: "GK", rating: 80 },
+                { name: "압둘라 알 마이유프", position: "GK", rating: 79 },
+                { name: "루이스 펠리피", position: "DF", rating: 83 },
+                { name: "아흐메드 헤가지", position: "DF", rating: 82 },
+                { name: "아흐메드 샤라힐리", position: "DF", rating: 81 },
+                { name: "오마르 하우사위", position: "DF", rating: 80 },
+                { name: "카림 벤제마", position: "FW", rating: 86 },
+                { name: "은골로 캉테", position: "MF", rating: 84 },
+                { name: "파비뉴", position: "MF", rating: 83 },
+                { name: "술탄 파르한", position: "MF", rating: 82 },
+                { name: "로마리뉴", position: "FW", rating: 83 },
+                { name: "조타", position: "FW", rating: 82 },
+                { name: "압데라락 함달라", position: "FW", rating: 81 },
+                { name: "하룬 카마라", position: "FW", rating: 80 }
+            ],
+            "갈라타사라이": [
+                { name: "페르난도 무슬레라", position: "GK", rating: 82 },
+                { name: "귀나이 귀벤츠", position: "GK", rating: 79 },
+                { name: "다빈손 산체스", position: "DF", rating: 83 },
+                { name: "데릭 쾬", position: "DF", rating: 82 },
+                { name: "압둘케림 바르닥치", position: "DF", rating: 81 },
+                { name: "프셰미스와프 프랑코프스키", position: "DF", rating: 80 },
+                { name: "루카스 토레이라", position: "MF", rating: 84 },
+                { name: "케렘 데미르바이", position: "MF", rating: 83 },
+                { name: "가브리에우 사라", position: "MF", rating: 82 },
+                { name: "유누스 아크귄", position: "MF", rating: 81 },
+                { name: "빅터 오시멘", position: "FW", rating: 86 },
+                { name: "마우로 이카르디", position: "FW", rating: 85 },
+                { name: "알바로 모라타", position: "FW", rating: 84 },
+                { name: "롤런드 셜러이", position: "FW", rating: 83 }
             ]
         };
 
-        // 각 팀에 랜덤 선수 배정
+        // 랜덤 선수 생성
         function generateRandomPlayers(teamName, league) {
+            if (realPlayers[teamName]) {
+                return realPlayers[teamName];
+            }
+
             const positions = ['GK', 'DF', 'DF', 'DF', 'DF', 'MF', 'MF', 'MF', 'FW', 'FW', 'FW'];
             const players = [];
             
-            // 리그별 기본 레이팅
             let baseRating = 70;
             if (league === "1부") baseRating = 80;
             else if (league === "2부") baseRating = 75;
             
-            if (samplePlayers[teamName]) {
-                return samplePlayers[teamName];
-            }
-            
-            for (let i = 0; i < 11; i++) {
+            for (let i = 0; i < positions.length; i++) {
                 const rating = baseRating + Math.floor(Math.random() * 15) - 5;
                 players.push({
                     name: `선수${i + 1}`,
@@ -376,10 +1226,64 @@
             return players;
         }
 
-        // 팀에 선수 배정
+        // 베스트 11 선택
+        function getBest11(players) {
+            const gk = players.filter(p => p.position === 'GK').sort((a, b) => b.rating - a.rating)[0];
+            const defenders = players.filter(p => p.position === 'DF').sort((a, b) => b.rating - a.rating).slice(0, 3);
+            const midfielders = players.filter(p => p.position === 'MF').sort((a, b) => b.rating - a.rating).slice(0, 3);
+            const forwards = players.filter(p => p.position === 'FW').sort((a, b) => b.rating - a.rating).slice(0, 3);
+            
+            return [gk, ...defenders, ...midfielders, ...forwards];
+        }
+
+        // 팀 레이팅 계산
+        function calculateTeamRating(players) {
+            const best11 = getBest11(players);
+            const totalRating = best11.reduce((sum, player) => sum + player.rating, 0);
+            return Math.round(totalRating / 11);
+        }
+
+        // 전술 상성 계산
+        function calculateTacticalAdvantage(tactic1, tactic2) {
+            if (tactics[tactic1].effective.includes(tactic2)) {
+                return 1; // 유리
+            } else if (tactics[tactic1].ineffective.includes(tactic2)) {
+                return -1; // 불리
+            }
+            return 0; // 중립
+        }
+
+        // 골 확률 계산 (새로운 시스템)
+        function calculateGoalProbability(team, opponent) {
+            // 1. 기본 확률
+            let baseProb = 1.5; // 기본 1.5%로 낮춤
+            
+            // 2. 리그별 보정
+            if (team.league === "1부") baseProb += 0.3;
+            else if (team.league === "3부") baseProb -= 0.3;
+            
+            // 3. 팀 레이팅 보정 (60-95 레이팅을 0.7-1.3배로 변환)
+            const ratingMultiplier = 0.7 + (team.rating - 60) / 35 * 0.6;
+            baseProb *= ratingMultiplier;
+            
+            // 4. 전술 상성 보정
+            const tacticalAdvantage = calculateTacticalAdvantage(team.tactic, opponent.tactic);
+            if (tacticalAdvantage === 1) baseProb += 0.5; // 유리한 전술
+            else if (tacticalAdvantage === -1) baseProb -= 0.5; // 불리한 전술
+            
+            // 5. 랜덤 요소 (80%-120%)
+            const randomFactor = 0.8 + Math.random() * 0.4;
+            baseProb *= randomFactor;
+            
+            return Math.max(0.5, Math.min(4.0, baseProb)); // 최소 0.5%, 최대 4%
+        }
+
+        // 팀에 선수 및 레이팅 배정
         Object.keys(teams).forEach(league => {
             teams[league].forEach(team => {
                 team.players = generateRandomPlayers(team.name, league);
+                team.rating = calculateTeamRating(team.players);
+                team.tactic = teamTactics[team.name] || "점유율 축구";
             });
         });
 
@@ -396,6 +1300,8 @@
                     card.className = 'team-card';
                     card.innerHTML = `
                         <div>${team.country} ${team.name}</div>
+                        <div class="team-rating">⭐ ${team.rating}</div>
+                        <div class="team-tactic">${team.tactic}</div>
                     `;
                     card.onclick = () => selectTeam(team, league, card);
                     container.appendChild(card);
@@ -421,21 +1327,33 @@
 
         function setupMatch() {
             document.getElementById('match-section').style.display = 'block';
-            document.getElementById('team1-name').textContent = selectedTeams[0].name;
-            document.getElementById('team2-name').textContent = selectedTeams[1].name;
+            
+            const team1 = selectedTeams[0];
+            const team2 = selectedTeams[1];
+            
+            document.getElementById('team1-name').textContent = team1.name;
+            document.getElementById('team2-name').textContent = team2.name;
+            document.getElementById('team1-stats').textContent = `레이팅: ${team1.rating} | 전술: ${team1.tactic}`;
+            document.getElementById('team2-stats').textContent = `레이팅: ${team2.rating} | 전술: ${team2.tactic}`;
             document.getElementById('team1-score').textContent = '0';
             document.getElementById('team2-score').textContent = '0';
             document.getElementById('match-events').innerHTML = '';
             document.getElementById('match-progress').style.width = '0%';
-        }
-
-        function getGoalProbability(league) {
-            let baseProb = 2; // 기본 2%
             
-            if (league === "1부") baseProb += 0.3;
-            else if (league === "3부") baseProb -= 0.3;
+            // 전술 상성 표시
+            const advantage1 = calculateTacticalAdvantage(team1.tactic, team2.tactic);
+            const advantage2 = calculateTacticalAdvantage(team2.tactic, team1.tactic);
             
-            return baseProb;
+            let tacticalInfo = '';
+            if (advantage1 === 1) {
+                tacticalInfo = `<span class="advantage">${team1.name}이 전술적으로 유리합니다!</span>`;
+            } else if (advantage2 === 1) {
+                tacticalInfo = `<span class="advantage">${team2.name}이 전술적으로 유리합니다!</span>`;
+            } else {
+                tacticalInfo = `<span class="neutral">전술적으로 균등한 경기입니다</span>`;
+            }
+            
+            document.getElementById('tactical-info').innerHTML = tacticalInfo;
         }
 
         function simulateMatch(team1, team2) {
@@ -443,15 +1361,27 @@
             let score1 = 0, score2 = 0;
             const goals1 = [], goals2 = [];
             
+            // 각 팀의 골 확률 계산
+            const goalProb1 = calculateGoalProbability(team1, team2);
+            const goalProb2 = calculateGoalProbability(team2, team1);
+            
             // 90분 시뮬레이션
             for (let minute = 1; minute <= 90; minute++) {
-                const goalProb1 = getGoalProbability(team1.league);
-                const goalProb2 = getGoalProbability(team2.league);
-                
                 // 팀1 골 체크
                 if (Math.random() * 100 < goalProb1) {
-                    const scorer = getRandomPlayer(team1.players, ['FW', 'MF', 'DF']);
-                    const assister = Math.random() < 0.8 ? getRandomPlayer(team1.players, ['FW', 'MF', 'DF']) : null;
+                    const best11_1 = getBest11(team1.players);
+                    const scorer = getRandomPlayer(best11_1, ['FW', 'MF', 'DF']);
+                    
+                    // 어시스트는 득점자와 다른 선수만 선택
+                    let assister = null;
+                    if (Math.random() < 0.8) {
+                        const assistCandidates = best11_1.filter(p => 
+                            p.name !== scorer.name && ['FW', 'MF', 'DF'].includes(p.position)
+                        );
+                        if (assistCandidates.length > 0) {
+                            assister = assistCandidates[Math.floor(Math.random() * assistCandidates.length)];
+                        }
+                    }
                     
                     score1++;
                     goals1.push({ scorer: scorer.name, assister: assister?.name || null });
@@ -465,8 +1395,19 @@
                 
                 // 팀2 골 체크
                 if (Math.random() * 100 < goalProb2) {
-                    const scorer = getRandomPlayer(team2.players, ['FW', 'MF', 'DF']);
-                    const assister = Math.random() < 0.8 ? getRandomPlayer(team2.players, ['FW', 'MF', 'DF']) : null;
+                    const best11_2 = getBest11(team2.players);
+                    const scorer = getRandomPlayer(best11_2, ['FW', 'MF', 'DF']);
+                    
+                    // 어시스트는 득점자와 다른 선수만 선택
+                    let assister = null;
+                    if (Math.random() < 0.8) {
+                        const assistCandidates = best11_2.filter(p => 
+                            p.name !== scorer.name && ['FW', 'MF', 'DF'].includes(p.position)
+                        );
+                        if (assistCandidates.length > 0) {
+                            assister = assistCandidates[Math.floor(Math.random() * assistCandidates.length)];
+                        }
+                    }
                     
                     score2++;
                     goals2.push({ scorer: scorer.name, assister: assister?.name || null });
@@ -478,18 +1419,30 @@
                     });
                 }
                 
-                // 기타 이벤트
+                // 기타 이벤트 (패스, 파울 등)
                 if (Math.random() < 0.05) {
-                    const player = getRandomPlayer([...team1.players, ...team2.players]);
+                    const allPlayers = [...getBest11(team1.players), ...getBest11(team2.players)];
+                    const player = allPlayers[Math.floor(Math.random() * allPlayers.length)];
+                    const eventType = Math.random();
+                    
+                    let eventText = '';
+                    if (eventType < 0.4) {
+                        eventText = `${minute}' ${player.name}이 파울을 범했습니다.`;
+                    } else if (eventType < 0.7) {
+                        eventText = `${minute}' ${player.name}의 좋은 패스!`;
+                    } else {
+                        eventText = `${minute}' ${player.name}이 슈팅을 시도했지만 골대를 벗어났습니다.`;
+                    }
+                    
                     events.push({
                         minute,
                         type: 'event',
-                        text: `${minute}' ${player.name}이 파울을 범했습니다.`
+                        text: eventText
                     });
                 }
             }
             
-            return { score1, score2, events, goals1, goals2 };
+            return { score1, score2, events, goals1, goals2, goalProb1, goalProb2 };
         }
 
         function getRandomPlayer(players, positions = ['GK', 'DF', 'MF', 'FW']) {
@@ -505,6 +1458,13 @@
             }
             
             currentMatch = simulateMatch(selectedTeams[0], selectedTeams[1]);
+            
+            // 경기 정보 로그
+            console.log(`=== 경기 시작 ===`);
+            console.log(`${selectedTeams[0].name} (레이팅: ${selectedTeams[0].rating}, 전술: ${selectedTeams[0].tactic})`);
+            console.log(`VS`);
+            console.log(`${selectedTeams[1].name} (레이팅: ${selectedTeams[1].rating}, 전술: ${selectedTeams[1].tactic})`);
+            console.log(`골 확률 - ${selectedTeams[0].name}: ${currentMatch.goalProb1.toFixed(2)}% | ${selectedTeams[1].name}: ${currentMatch.goalProb2.toFixed(2)}%`);
             
             let eventIndex = 0;
             let currentMinute = 0;
@@ -527,13 +1487,13 @@
                     
                     // 골인 경우 스코어 업데이트
                     if (event.type === 'goal') {
-                        if (event.team === selectedTeams[0].name) {
-                            document.getElementById('team1-score').textContent = 
-                                currentMatch.goals1.filter((_, i) => i < eventIndex + 1 && currentMatch.events.slice(0, eventIndex + 1).filter(e => e.type === 'goal' && e.team === selectedTeams[0].name).length > i).length;
-                        } else {
-                            document.getElementById('team2-score').textContent = 
-                                currentMatch.goals2.filter((_, i) => i < eventIndex + 1 && currentMatch.events.slice(0, eventIndex + 1).filter(e => e.type === 'goal' && e.team === selectedTeams[1].name).length > i).length;
-                        }
+                        const team1Goals = currentMatch.events.slice(0, eventIndex + 1)
+                            .filter(e => e.type === 'goal' && e.team === selectedTeams[0].name).length;
+                        const team2Goals = currentMatch.events.slice(0, eventIndex + 1)
+                            .filter(e => e.type === 'goal' && e.team === selectedTeams[1].name).length;
+                        
+                        document.getElementById('team1-score').textContent = team1Goals;
+                        document.getElementById('team2-score').textContent = team2Goals;
                     }
                     
                     eventIndex++;
@@ -621,8 +1581,57 @@
             output.scrollTop = output.scrollHeight;
         }
 
-        // 초기화
-        createTeamCards();
-    </script>
-</body>
-</html>
+        // 초기화 및 디버깅
+        console.log("게임 시작 - 팀 데이터 확인:", teams);
+        console.log("1부 리그 팀 수:", teams["1부"].length);
+        
+        // 팀 카드 생성 함수 개선
+        function createTeamCards() {
+            console.log("팀 카드 생성 시작...");
+            
+            Object.keys(teams).forEach(league => {
+                const leagueNumber = league === "1부" ? "1" : league === "2부" ? "2" : "3";
+                const containerId = `league${leagueNumber}-teams`;
+                const container = document.getElementById(containerId);
+                
+                console.log(`${league} 컨테이너 찾기:`, container);
+                
+                if (!container) {
+                    console.error(`컨테이너를 찾을 수 없습니다: ${containerId}`);
+                    return;
+                }
+                
+                teams[league].forEach((team, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'team-card';
+                    card.innerHTML = `
+                        <div>${team.country} ${team.name}</div>
+                        <div class="team-rating">⭐ ${team.rating}</div>
+                        <div class="team-tactic">${team.tactic}</div>
+                    `;
+                    card.onclick = () => selectTeam(team, league, card);
+                    container.appendChild(card);
+                    
+                    console.log(`${team.name} 카드 생성됨`);
+                });
+                
+                console.log(`${league} 완료 - ${teams[league].length}개 팀`);
+            });
+            
+            console.log("모든 팀 카드 생성 완료!");
+        }
+
+        // 페이지 로드 확인
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM 로드 완료");
+            createTeamCards();
+        });
+        
+        // 즉시 실행도 추가 (안전장치)
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', createTeamCards);
+        } else {
+            createTeamCards();
+        }
+        
+        console.log("초기화 스크립트 완료");
