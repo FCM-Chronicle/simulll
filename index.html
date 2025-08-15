@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>슈퍼리그 축구 시뮬레이션</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+
+        .game-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .team-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .team-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .team-card:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .team-card.selected {
+            border-color: #FFD700;
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .league-title {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            text-align: center;
+            color: #FFD700;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .match-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .team-info {
+            text-align: center;
+            flex: 1;
+        }
+
+        .team-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .vs {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .score {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .match-events {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .event {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid #FFD700;
+        }
+
+        .goal-event {
+            border-left-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.2);
+        }
+
+        .time {
+            font-weight: bold;
+            color: #FFD700;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            width: 0%;
+            transition: width 1s ease;
+        }
+
+        .simulation-controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .league-divider {
+            border-top: 2px solid rgba(255, 255, 255, 0.3);
+            margin: 20px 0;
+            padding-top: 20px;
+        }
+
+        .console-output {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .team-card {
+                min-width: 150px;
+            }
+            
+            .match-area {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 슈퍼리그 축구 시뮬레이션</h1>
+            <p>팀을 선택하고 경기를 시뮬레이션해보세요!</p>
+        </div>
+
+        <div class="game-section">
+            <h2 class="league-title">1부 리그 (최고 수준)</h2>
+            <div class="team-select" id="league1-teams"></div>
+            
+            <div class="league-divider"></div>
+            <h2 class="league-title">2부 리그 (준최고 수준)</h2>
+            <div class="team-select" id="league2-teams"></div>
+            
+            <div class="league-divider"></div>
+            <h2 class="league-title">3부 리그 (도전자들)</h2>
+            <div class="team-select" id="league3-teams"></div>
+        </div>
+
+        <div class="game-section" id="match-section" style="display: none;">
+            <div class="match-area">
+                <div class="team-info">
+                    <div class="team-name" id="team1-name">팀 1</div>
+                    <div class="score" id="team1-score">0</div>
+                </div>
+                <div class="vs">VS</div>
+                <div class="team-info">
+                    <div class="team-name" id="team2-name">팀 2</div>
+                    <div class="score" id="team2-score">0</div>
+                </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="match-progress"></div>
+            </div>
+
+            <div class="simulation-controls">
+                <button class="btn" onclick="startMatch()">경기 시작</button>
+                <button class="btn" onclick="resetMatch()">다시 시작</button>
+                <button class="btn" onclick="simulateAllLeagues()">전체 리그 시뮬레이션</button>
+            </div>
+
+            <div class="match-events" id="match-events"></div>
+        </div>
+
+        <div class="game-section">
+            <h3>시뮬레이션 결과</h3>
+            <div class="console-output" id="console-output"></div>
+        </div>
+    </div>
+
+    <script>
+        // 팀 데이터
+        const teams = {
+            "1부": [
+                { name: "레알 마드리드", country: "🇪🇸", players: [] },
+                { name: "바르셀로나", country: "🇪🇸", players: [] },
+                { name: "맨체스터 시티", country: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", players: [] },
+                { name: "바이에른 뮌헨", country: "🇩🇪", players: [] },
+                { name: "파리 생제르맹", country: "🇫🇷", players: [] },
+                { name: "리버풀", country: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", players: [] },
+                { name: "아스널", country: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", players: [] },
+                { name: "AC 밀란", country: "🇮🇹", players: [] },
+                { name: "인터 밀란", country: "🇮🇹", players: [] },
+                { name: "아틀레티코 마드리드", country: "🇪🇸", players: [] },
+                { name: "첼시", country: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", players: [] },
+                { name: "도르트문트", country: "🇩🇪", players: [] },
+                { name: "나폴리", country: "🇮🇹", players: [] },
+                { name: "토트넘 홋스퍼", country: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", players: [] }
+            ],
+            "2부": [
+                { name: "유벤투스", country: "🇮🇹", players: [] },
+                { name: "라이프치히", country: "🇩🇪", players: [] },
+                { name: "뉴캐슬 유나이티드", country: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", players: [] },
+                { name: "세비야", country: "🇪🇸", players: [] },
+                { name: "아약스", country: "🇳🇱", players: [] },
+                { name: "로마", country: "🇮🇹", players: [] },
+                { name: "레버쿠젠", country: "🇩🇪", players: [] },
+                { name: "페예노르트", country: "🇳🇱", players: [] },
+                { name: "리옹", country: "🇫🇷", players: [] },
+                { name: "벤피카", country: "🇵🇹", players: [] },
+                { name: "PSV", country: "🇳🇱", players: [] },
+                { name: "스포르팅 CP", country: "🇵🇹", players: [] },
+                { name: "셀틱", country: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", players: [] },
+                { name: "아스톤 빌라", country: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", players: [] }
+            ],
+            "3부": [
+                { name: "FC 서울", country: "🇰🇷", players: [] },
+                { name: "전북 현대", country: "🇰🇷", players: [] },
+                { name: "울산 현대", country: "🇰🇷", players: [] },
+                { name: "포항 스틸러스", country: "🇰🇷", players: [] },
+                { name: "광주 FC", country: "🇰🇷", players: [] },
+                { name: "마르세유", country: "🇫🇷", players: [] },
+                { name: "브라질 연합", country: "🇧🇷", players: [] },
+                { name: "아르헨티나 연합", country: "🇦🇷", players: [] },
+                { name: "멕시코 연합", country: "🇲🇽", players: [] },
+                { name: "미국 연합", country: "🇺🇸", players: [] },
+                { name: "알힐랄", country: "🇸🇦", players: [] },
+                { name: "알나스르", country: "🇸🇦", players: [] },
+                { name: "알이티하드", country: "🇸🇦", players: [] },
+                { name: "갈라타사라이", country: "🇹🇷", players: [] }
+            ]
+        };
+
+        // 선수 데이터 (샘플)
+        const samplePlayers = {
+            "바르셀로나": [
+                { name: "마르크안드레 테어 슈테겐", position: "GK", rating: 85 },
+                { name: "파우 쿠바르시", position: "DF", rating: 78 },
+                { name: "알레한드로 발데", position: "DF", rating: 76 },
+                { name: "가비", position: "MF", rating: 82 },
+                { name: "페드리", position: "MF", rating: 86 },
+                { name: "로베르트 레반도프스키", position: "FW", rating: 89 },
+                { name: "라민 야말", position: "FW", rating: 83 },
+                { name: "하피냐", position: "FW", rating: 85 }
+            ],
+            "레알 마드리드": [
+                { name: "티보 쿠르투아", position: "GK", rating: 87 },
+                { name: "다니 카르바할", position: "DF", rating: 82 },
+                { name: "에데르 밀리탕", position: "DF", rating: 84 },
+                { name: "주드 벨링엄", position: "MF", rating: 88 },
+                { name: "비니시우스 주니오르", position: "FW", rating: 87 },
+                { name: "킬리안 음바페", position: "FW", rating: 92 },
+                { name: "호드리구", position: "FW", rating: 85 }
+            ]
+        };
+
+        // 각 팀에 랜덤 선수 배정
+        function generateRandomPlayers(teamName, league) {
+            const positions = ['GK', 'DF', 'DF', 'DF', 'DF', 'MF', 'MF', 'MF', 'FW', 'FW', 'FW'];
+            const players = [];
+            
+            // 리그별 기본 레이팅
+            let baseRating = 70;
+            if (league === "1부") baseRating = 80;
+            else if (league === "2부") baseRating = 75;
+            
+            if (samplePlayers[teamName]) {
+                return samplePlayers[teamName];
+            }
+            
+            for (let i = 0; i < 11; i++) {
+                const rating = baseRating + Math.floor(Math.random() * 15) - 5;
+                players.push({
+                    name: `선수${i + 1}`,
+                    position: positions[i],
+                    rating: Math.max(60, Math.min(95, rating))
+                });
+            }
+            
+            return players;
+        }
+
+        // 팀에 선수 배정
+        Object.keys(teams).forEach(league => {
+            teams[league].forEach(team => {
+                team.players = generateRandomPlayers(team.name, league);
+            });
+        });
+
+        let selectedTeams = [];
+        let currentMatch = null;
+        let matchInterval = null;
+
+        // 팀 선택 UI 생성
+        function createTeamCards() {
+            Object.keys(teams).forEach(league => {
+                const container = document.getElementById(`league${league === "1부" ? "1" : league === "2부" ? "2" : "3"}-teams`);
+                teams[league].forEach((team, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'team-card';
+                    card.innerHTML = `
+                        <div>${team.country} ${team.name}</div>
+                    `;
+                    card.onclick = () => selectTeam(team, league, card);
+                    container.appendChild(card);
+                });
+            });
+        }
+
+        function selectTeam(team, league, cardElement) {
+            if (selectedTeams.length >= 2) {
+                selectedTeams = [];
+                document.querySelectorAll('.team-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+            }
+            
+            selectedTeams.push({ ...team, league });
+            cardElement.classList.add('selected');
+            
+            if (selectedTeams.length === 2) {
+                setupMatch();
+            }
+        }
+
+        function setupMatch() {
+            document.getElementById('match-section').style.display = 'block';
+            document.getElementById('team1-name').textContent = selectedTeams[0].name;
+            document.getElementById('team2-name').textContent = selectedTeams[1].name;
+            document.getElementById('team1-score').textContent = '0';
+            document.getElementById('team2-score').textContent = '0';
+            document.getElementById('match-events').innerHTML = '';
+            document.getElementById('match-progress').style.width = '0%';
+        }
+
+        function getGoalProbability(league) {
+            let baseProb = 2; // 기본 2%
+            
+            if (league === "1부") baseProb += 0.3;
+            else if (league === "3부") baseProb -= 0.3;
+            
+            return baseProb;
+        }
+
+        function simulateMatch(team1, team2) {
+            const events = [];
+            let score1 = 0, score2 = 0;
+            const goals1 = [], goals2 = [];
+            
+            // 90분 시뮬레이션
+            for (let minute = 1; minute <= 90; minute++) {
+                const goalProb1 = getGoalProbability(team1.league);
+                const goalProb2 = getGoalProbability(team2.league);
+                
+                // 팀1 골 체크
+                if (Math.random() * 100 < goalProb1) {
+                    const scorer = getRandomPlayer(team1.players, ['FW', 'MF', 'DF']);
+                    const assister = Math.random() < 0.8 ? getRandomPlayer(team1.players, ['FW', 'MF', 'DF']) : null;
+                    
+                    score1++;
+                    goals1.push({ scorer: scorer.name, assister: assister?.name || null });
+                    events.push({
+                        minute,
+                        team: team1.name,
+                        type: 'goal',
+                        text: `⚽ ${minute}' ${scorer.name}이 골을 넣었습니다!${assister ? ` (어시스트: ${assister.name})` : ''}`
+                    });
+                }
+                
+                // 팀2 골 체크
+                if (Math.random() * 100 < goalProb2) {
+                    const scorer = getRandomPlayer(team2.players, ['FW', 'MF', 'DF']);
+                    const assister = Math.random() < 0.8 ? getRandomPlayer(team2.players, ['FW', 'MF', 'DF']) : null;
+                    
+                    score2++;
+                    goals2.push({ scorer: scorer.name, assister: assister?.name || null });
+                    events.push({
+                        minute,
+                        team: team2.name,
+                        type: 'goal',
+                        text: `⚽ ${minute}' ${scorer.name}이 골을 넣었습니다!${assister ? ` (어시스트: ${assister.name})` : ''}`
+                    });
+                }
+                
+                // 기타 이벤트
+                if (Math.random() < 0.05) {
+                    const player = getRandomPlayer([...team1.players, ...team2.players]);
+                    events.push({
+                        minute,
+                        type: 'event',
+                        text: `${minute}' ${player.name}이 파울을 범했습니다.`
+                    });
+                }
+            }
+            
+            return { score1, score2, events, goals1, goals2 };
+        }
+
+        function getRandomPlayer(players, positions = ['GK', 'DF', 'MF', 'FW']) {
+            const filteredPlayers = players.filter(p => positions.includes(p.position));
+            return filteredPlayers[Math.floor(Math.random() * filteredPlayers.length)];
+        }
+
+        function startMatch() {
+            if (selectedTeams.length !== 2) return;
+            
+            if (matchInterval) {
+                clearInterval(matchInterval);
+            }
+            
+            currentMatch = simulateMatch(selectedTeams[0], selectedTeams[1]);
+            
+            let eventIndex = 0;
+            let currentMinute = 0;
+            
+            matchInterval = setInterval(() => {
+                currentMinute++;
+                
+                // 진행률 업데이트
+                document.getElementById('match-progress').style.width = `${(currentMinute / 90) * 100}%`;
+                
+                // 이벤트 표시
+                while (eventIndex < currentMatch.events.length && 
+                       currentMatch.events[eventIndex].minute <= currentMinute) {
+                    
+                    const event = currentMatch.events[eventIndex];
+                    const eventDiv = document.createElement('div');
+                    eventDiv.className = event.type === 'goal' ? 'event goal-event' : 'event';
+                    eventDiv.innerHTML = `<span class="time">${event.minute}'</span> ${event.text}`;
+                    document.getElementById('match-events').appendChild(eventDiv);
+                    
+                    // 골인 경우 스코어 업데이트
+                    if (event.type === 'goal') {
+                        if (event.team === selectedTeams[0].name) {
+                            document.getElementById('team1-score').textContent = 
+                                currentMatch.goals1.filter((_, i) => i < eventIndex + 1 && currentMatch.events.slice(0, eventIndex + 1).filter(e => e.type === 'goal' && e.team === selectedTeams[0].name).length > i).length;
+                        } else {
+                            document.getElementById('team2-score').textContent = 
+                                currentMatch.goals2.filter((_, i) => i < eventIndex + 1 && currentMatch.events.slice(0, eventIndex + 1).filter(e => e.type === 'goal' && e.team === selectedTeams[1].name).length > i).length;
+                        }
+                    }
+                    
+                    eventIndex++;
+                }
+                
+                if (currentMinute >= 90) {
+                    clearInterval(matchInterval);
+                    
+                    // 최종 스코어 업데이트
+                    document.getElementById('team1-score').textContent = currentMatch.score1;
+                    document.getElementById('team2-score').textContent = currentMatch.score2;
+                    
+                    // 콘솔 출력
+                    logMatchResult(selectedTeams[0], selectedTeams[1], currentMatch);
+                    
+                    // 경기 종료 이벤트
+                    const finalEvent = document.createElement('div');
+                    finalEvent.className = 'event';
+                    finalEvent.innerHTML = `<span class="time">90'</span> 경기가 종료되었습니다! 최종 스코어: ${currentMatch.score1}-${currentMatch.score2}`;
+                    document.getElementById('match-events').appendChild(finalEvent);
+                }
+            }, 1000); // 1초마다 1분씩
+        }
+
+        function resetMatch() {
+            if (matchInterval) {
+                clearInterval(matchInterval);
+            }
+            
+            document.getElementById('team1-score').textContent = '0';
+            document.getElementById('team2-score').textContent = '0';
+            document.getElementById('match-events').innerHTML = '';
+            document.getElementById('match-progress').style.width = '0%';
+        }
+
+        function logMatchResult(team1, team2, result) {
+            const output = document.getElementById('console-output');
+            
+            let log = `${team1.name} (${result.score1}) vs (${result.score2}) ${team2.name}\n`;
+            
+            // 팀1 골 정보
+            if (result.goals1.length > 0) {
+                const goalInfo = result.goals1.map(goal => 
+                    goal.assister ? `${goal.scorer}, ${goal.assister}` : goal.scorer
+                ).join(': ');
+                log += `${team1.name}: ${goalInfo}\n`;
+            }
+            
+            // 팀2 골 정보
+            if (result.goals2.length > 0) {
+                const goalInfo = result.goals2.map(goal => 
+                    goal.assister ? `${goal.scorer}, ${goal.assister}` : goal.scorer
+                ).join(': ');
+                log += `${team2.name}: ${goalInfo}\n`;
+            }
+            
+            log += '\n';
+            output.textContent += log;
+            output.scrollTop = output.scrollHeight;
+            
+            console.log(log);
+        }
+
+        function simulateAllLeagues() {
+            const output = document.getElementById('console-output');
+            output.textContent += "=== 전체 리그 시뮬레이션 ===\n";
+            
+            Object.keys(teams).forEach(league => {
+                output.textContent += `\n--- ${league} 리그 ---\n`;
+                
+                const leagueTeams = teams[league];
+                
+                // 각 팀이 다른 팀들과 1경기씩
+                for (let i = 0; i < leagueTeams.length; i++) {
+                    for (let j = i + 1; j < leagueTeams.length; j++) {
+                        const team1 = { ...leagueTeams[i], league };
+                        const team2 = { ...leagueTeams[j], league };
+                        
+                        const result = simulateMatch(team1, team2);
+                        logMatchResult(team1, team2, result);
+                    }
+                }
+            });
+            
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // 초기화
+        createTeamCards();
+    </script>
+</body>
+</html>
